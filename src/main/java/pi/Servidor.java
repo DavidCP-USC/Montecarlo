@@ -6,34 +6,31 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
 public class Servidor extends Thread{
-    private String nombre;
-    
-    public Servidor(String nombre) {
+    int valor;
+    public Servidor(Integer valor) {
         super();
-        this.nombre = nombre;
+        this.valor = valor;
     }
     @Override
     public void run() {
         int puertoRMI = 6789;
-        String URLRegistro = "rmi://localhost:" + puertoRMI + "/interfaz";
+        String URLRegistro = "rmi://localhost:" + puertoRMI + "/interfaz"+valor;
         try {
             startRegistry(puertoRMI);
             InterfazImpl objeto = new InterfazImpl();
             Naming.rebind(URLRegistro, objeto);
-            System.out.println("Servidor registrado. El registro contiente: ");
-            listRegistry(URLRegistro);
+            // System.out.println("Servidor registrado. El registro contiente: ");
+            // listRegistry(URLRegistro);
 
         } catch (RemoteException e) {
             e.getMessage();
         } catch (MalformedURLException e) {
             e.getMessage();
         }
-
-        System.out.println("Hilo servidor " + this.nombre + " terminado");
     }
 
      // Método que inicia un registro RMI en el puerto especificado
-    private static void startRegistry(int PuertoRMI) throws RemoteException{
+    private synchronized static void startRegistry(int PuertoRMI) throws RemoteException{
         try {
             Registry registry = LocateRegistry.getRegistry(PuertoRMI);
             registry.list(); 

@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.net.MalformedURLException;
 
 public class Cliente extends Thread{
-    static Integer[] divisionTrabajo = null;
+    public static ArrayList<Integer> divisionTrabajo = new ArrayList<>();
+    public static ArrayList<Float> resultado = new ArrayList<>();
+    public static int numServidores = 0;
     public Cliente() {
         super();
     }
@@ -17,69 +19,86 @@ public class Cliente extends Thread{
         int n = scanner.nextInt();
         scanner.close();
         */
-        int numServidores = 1;
-        int n = 10;
+        numServidores = 5;
+        int n = 1000000;
         
         // Dividimos el trabajo entre los servidores
-        divisionTrabajo = new Integer[numServidores];
         Integer iteracionesExtra = n%numServidores;
         for (int i = 0; i < numServidores; i++){
-            divisionTrabajo[i] = n/numServidores;
+            divisionTrabajo.add(n/numServidores);
         }
 
         // En el caso de que la division no sea exacta, se le asigna
         // un punto mas a los primeros servidores
         for (int i = 0; i < iteracionesExtra; i++){
-                divisionTrabajo[i] += 1;
+            divisionTrabajo.set(i, divisionTrabajo.get(i) + 1);
         }
 
         // Iniciamos los servidores y creamos los hilos clientes que 
         // los escucharán
 
         // Iniciamos los servidores
-        Cliente[] clientes = new Cliente[numServidores];
         Servidor[] servidores = new Servidor[numServidores];
         
-            for (int i = 0; i < numServidores; i++){
-                servidores[i] = new Servidor("Servidor " + i);
-                servidores[i].start();
-            }
-        try{
-            for (Servidor s : servidores){
+        for (int i = 0; i < numServidores; i++){
+            servidores[i] = new Servidor(i);
+            servidores[i].start();
+        }
+
+        // Esperamos a que los servidores terminen
+        try {
+            for (Servidor s: servidores){
                 s.join();
             }
         } catch (InterruptedException e) {
-                e.getMessage();
+            System.out.println("Error al esperar a los hilos");
         }
 
+        Cliente cliente = new Cliente();
         // Iniciamos los clientes
-        for (int i = 0; i < numServidores; i++){
-            clientes[i] = new Cliente();
-            clientes[i].start();
-        }
+        cliente = new Cliente();
+        cliente.start();
         // Esperamos a que los clientes terminen
         try {
-            for (Cliente c: clientes){
-            c.join();
-        }
+            cliente.join();
         } catch (InterruptedException e) {
             System.out.println("Error al esperar a los hilos");
         }
-        System.out.println("Hilo principal terminado");
+        //imprimirResultado();
+        System.out.println("Pi = " + (4.0*resultado.size()/2/n));
+    }
+
+    private static synchronized void imprimirResultado(){
+        for (int i = 0; i < resultado.size(); i+=2){
+            System.out.println("Punto valido " + (i/2 + 1) + ": (" + resultado.get(i) + ", " + resultado.get(i+1) + ")");
+        }
+    }
+
+    private synchronized Integer trabajo(){
+        Integer returnValue = new Integer(divisionTrabajo.get(0));
+        divisionTrabajo.remove(0);
+        return returnValue;
+    }
+
+    private synchronized void addToList(ArrayList<Float> x){
+        for (Float f: x){
+            resultado.add(f);
+        }
     }
     @Override
     public void run(){
         int puertoRMI = 6789;
-        String URLRegistro = "rmi://localhost:" + puertoRMI + "/interfaz";
-        
+        String URLRegistro = new String();
+        int trabajo = 0;
         try {
-            Interfaz objetoRemoto = (Interfaz) Naming.lookup(URLRegistro);
-            System.out.println("Lookup completado");
-            // Invocamos el metodo remoto
-            ArrayList<Float> lista = objetoRemoto.crearPares(divisionTrabajo[0]);
-            System.out.println("El servidor ha devuelto: ");
-            for (int i = 0; i < lista.size(); i++){
-                System.out.println(lista.get(i));
+            for (int i = 0; i < numServidores; i++){
+                URLRegistro = "rmi://localhost:" + puertoRMI + "/interfaz"+i;
+                System.out.println("Buscando en: " + URLRegistro);
+                Interfaz objetoRemoto = (Interfaz) Naming.lookup(URLRegistro);
+                // Invocamos el metodo remoto
+                trabajo = trabajo();
+                System.out.println("Trabajo asignado: " + trabajo);
+                addToList(objetoRemoto.crearPares(trabajo));
             }
         } catch (RemoteException e) {
             e.getMessage();
@@ -88,8 +107,6 @@ public class Cliente extends Thread{
         } catch (MalformedURLException e) {
             e.getMessage();
         }
-        System.out.println("Hilo cliente terminado");
-
     }
 }
 
