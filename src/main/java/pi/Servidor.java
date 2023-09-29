@@ -1,6 +1,9 @@
 package pi;
-import java.net.*;
-import java.io.*;
+import java.net.MalformedURLException;
+import java.rmi.Naming;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 
 public class Servidor extends Thread{
     private String nombre;
@@ -9,12 +12,45 @@ public class Servidor extends Thread{
         super();
         this.nombre = nombre;
     }
-
-    //private synchronized int sacarBolas(){  
-    //}
-
     @Override
     public void run() {
-        System.out.println("Hilo servidor " + this.nombre + " iniciado");
+        int puertoRMI = 6789;
+        String URLRegistro = "rmi://localhost:" + puertoRMI + "/interfaz";
+        try {
+            startRegistry(puertoRMI);
+            InterfazImpl objeto = new InterfazImpl();
+            Naming.rebind(URLRegistro, objeto);
+            System.out.println("Servidor registrado. El registro contiente: ");
+            listRegistry(URLRegistro);
+
+        } catch (RemoteException e) {
+            e.getMessage();
+        } catch (MalformedURLException e) {
+            e.getMessage();
+        }
+
+        System.out.println("Hilo servidor " + this.nombre + " terminado");
+    }
+
+     // Método que inicia un registro RMI en el puerto especificado
+    private static void startRegistry(int PuertoRMI) throws RemoteException{
+        try {
+            Registry registry = LocateRegistry.getRegistry(PuertoRMI);
+            registry.list(); 
+        }
+        catch (RemoteException e) { 
+            System.out.println("El registro de RMI no se puede localizar en el puerto " + PuertoRMI);
+            LocateRegistry.createRegistry(PuertoRMI);
+            System.out.println("Registro RMI creado en el puerto " + PuertoRMI);
+        }
+    }
+
+    // Método que lista los registros RMI 
+    private static void listRegistry(String registryURL)
+        throws RemoteException, MalformedURLException {
+        System.out.println("Registro " + registryURL + " contiene: ");
+        String [ ] nombres = Naming.list(registryURL);
+        for (int i=0; i < nombres.length; i++)
+            System.out.println(nombres[i]);
     }
 }
