@@ -17,7 +17,6 @@ public class InterfazImpl extends UnicastRemoteObject implements Interfaz {
             x = (float) (Math.random());
             y = (float) (Math.random());
             if ((x*x + y*y) <= 1){
-                //System.out.println("Punto valido: (" + x + ", " + y + ")");
                 resultado.add(x);
                 resultado.add(y);
             }

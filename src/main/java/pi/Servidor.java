@@ -16,11 +16,10 @@ public class Servidor extends Thread{
         int puertoRMI = 6789;
         String URLRegistro = "rmi://localhost:" + puertoRMI + "/interfaz"+valor;
         try {
+            // Creamos el objeto remoto
             startRegistry(puertoRMI);
             InterfazImpl objeto = new InterfazImpl();
             Naming.rebind(URLRegistro, objeto);
-            // System.out.println("Servidor registrado. El registro contiente: ");
-            // listRegistry(URLRegistro);
 
         } catch (RemoteException e) {
             e.getMessage();
@@ -43,8 +42,7 @@ public class Servidor extends Thread{
     }
 
     // Método que lista los registros RMI 
-    private static void listRegistry(String registryURL)
-        throws RemoteException, MalformedURLException {
+    private static void listRegistry(String registryURL) throws RemoteException, MalformedURLException {
         System.out.println("Registro " + registryURL + " contiene: ");
         String [ ] nombres = Naming.list(registryURL);
         for (int i=0; i < nombres.length; i++)

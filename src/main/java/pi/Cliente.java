@@ -1,6 +1,7 @@
 package pi;
 import java.rmi.*;
 import java.util.ArrayList;
+import java.util.Scanner;
 import java.net.MalformedURLException;
 
 public class Cliente extends Thread{
@@ -12,15 +13,12 @@ public class Cliente extends Thread{
     }
 
     public static void main(String[] args) {
-        /*Scanner scanner = new Scanner(System.in);
+        Scanner scanner = new Scanner(System.in);
         System.out.print("Ingrese el numero de servidores: ");
         int numServidores = scanner.nextInt();
         System.out.print("Ingrese la cantidad de puntos a generar: ");
         int n = scanner.nextInt();
         scanner.close();
-        */
-        numServidores = 5;
-        int n = 1000000;
         
         // Dividimos el trabajo entre los servidores
         Integer iteracionesExtra = n%numServidores;
@@ -33,9 +31,6 @@ public class Cliente extends Thread{
         for (int i = 0; i < iteracionesExtra; i++){
             divisionTrabajo.set(i, divisionTrabajo.get(i) + 1);
         }
-
-        // Iniciamos los servidores y creamos los hilos clientes que 
-        // los escucharán
 
         // Iniciamos los servidores
         Servidor[] servidores = new Servidor[numServidores];
@@ -52,28 +47,25 @@ public class Cliente extends Thread{
             }
         } catch (InterruptedException e) {
             System.out.println("Error al esperar a los hilos");
+            e.getMessage();
         }
 
+        // Iniciamos al cliente
         Cliente cliente = new Cliente();
-        // Iniciamos los clientes
         cliente = new Cliente();
         cliente.start();
-        // Esperamos a que los clientes terminen
+        // Esperamos a que el cliente termine
         try {
             cliente.join();
         } catch (InterruptedException e) {
             System.out.println("Error al esperar a los hilos");
+            e.getMessage();
         }
-        //imprimirResultado();
+
         System.out.println("Pi = " + (4.0*resultado.size()/2/n));
     }
 
-    private static synchronized void imprimirResultado(){
-        for (int i = 0; i < resultado.size(); i+=2){
-            System.out.println("Punto valido " + (i/2 + 1) + ": (" + resultado.get(i) + ", " + resultado.get(i+1) + ")");
-        }
-    }
-
+    // Metodo que obtiene el trabajo a realizar por el objeto servidor
     private synchronized Integer trabajo(){
         Integer returnValue = new Integer(divisionTrabajo.get(0));
         divisionTrabajo.remove(0);
@@ -91,11 +83,12 @@ public class Cliente extends Thread{
         String URLRegistro = new String();
         int trabajo = 0;
         try {
+            // Buscamos los objetos remotos
             for (int i = 0; i < numServidores; i++){
                 URLRegistro = "rmi://localhost:" + puertoRMI + "/interfaz"+i;
                 System.out.println("Buscando en: " + URLRegistro);
                 Interfaz objetoRemoto = (Interfaz) Naming.lookup(URLRegistro);
-                // Invocamos el metodo remoto
+                // Invocamos el metodo remoto del objeto remoto
                 trabajo = trabajo();
                 System.out.println("Trabajo asignado: " + trabajo);
                 addToList(objetoRemoto.crearPares(trabajo));
